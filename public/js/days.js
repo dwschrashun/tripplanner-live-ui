@@ -12,13 +12,14 @@ var daysModule = (function(){
       currentDay = days[0];
 
   function addDay () {
-    days.push({
-      hotels: [],
-      restaurants: [],
-      activities: []
-    });
+    // days.push({
+    //   hotels: [],
+    //   restaurants: [],
+    //   activities: []
+    // });
+    
     renderDayButtons();
-    switchDay(days.length - 1);
+    switchDay(currentDay.number + 1);
   }
 
   function switchDay (index) {
@@ -26,20 +27,27 @@ var daysModule = (function(){
     if (index >= days.length) index = days.length - 1;
     $title.children('span').remove();
     $title.prepend('<span>Day ' + (index + 1) + '</span>');
-    currentDay = days[index];
-    renderDay();
+    currentDay = getDay(index);
+    console.log("current day is: ", currentDay);
+    renderDay(currentDay);
     renderDayButtons();
-   //  $.ajax({
-   //    method: 'get',
-   //    url: '/api/days',
-   //    success: function (responseData) {
-   //        console.log("active day: ", responseData);
-   //    },
-   //    error: function (errorObj) {
-   //        // some code to run if the request errors out
-   //        console.error("unable to switch day: ", errorObj);
-   //    }
-   // });
+  }
+
+  function getDay (index) {
+    var theUrl = "/api/days/" + index;
+    $.ajax({
+      method: 'get',
+      url: theUrl,
+      success: function (responseData) {
+          console.log("active day: ", responseData);
+          return responseData;
+      },
+      error: function (errorObj) {
+          // some code to run if the request errors out
+          console.error("unable to switch day: ", errorObj);
+      }
+   });
+
   }
 
   function removeCurrentDay () {
@@ -66,6 +74,7 @@ var daysModule = (function(){
   }
 
   function renderDayButtons () {
+    console.log("rendering day buttons");
     var $daySelect = $('#day-select');
     $daySelect.empty();
     days.forEach(function(day, i){
@@ -94,6 +103,7 @@ var daysModule = (function(){
   function renderDay(day) {
     mapModule.eraseMarkers();
     day = day || currentDay;
+    console.log("the day: ", day);
     Object.keys(day).forEach(function(type){
       var $list = $('#itinerary ul[data-type="' + type + '"]');
       $list.empty();
@@ -109,7 +119,7 @@ var daysModule = (function(){
   }
 
   $(document).ready(function(){
-    switchDay(0);
+    switchDay(1);
     $('.day-buttons').on('click', '.new-day-btn', addDay);
     $('.day-buttons').on('click', 'button:not(.new-day-btn)', function() {
       switchDay($(this).index());
