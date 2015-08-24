@@ -29,13 +29,40 @@ var daysModule = (function(){
     currentDay = days[index];
     renderDay();
     renderDayButtons();
+   //  $.ajax({
+   //    method: 'get',
+   //    url: '/api/days',
+   //    success: function (responseData) {
+   //        console.log("active day: ", responseData);
+   //    },
+   //    error: function (errorObj) {
+   //        // some code to run if the request errors out
+   //        console.error("unable to switch day: ", errorObj);
+   //    }
+   // });
   }
 
   function removeCurrentDay () {
-    if (days.length === 1) return;
-    var index = days.indexOf(currentDay);
-    days.splice(index, 1);
-    switchDay(index);
+    $.ajax({
+      method: 'delete',
+      url: '/api/days',
+      success: function (responseData) {
+          console.log("day deleted: ", responseData);
+          switchDay(index);
+      },
+      error: function (errorObj) {
+          // some code to run if the request errors out
+          console.error("unable to delete day: ", errorObj);
+      }
+   });
+
+    // $.delete('/api/days', function (data) {console.log('deleted day: ', data)})
+    // .fail( function (err) {console.error('err', err)} );
+
+    // if (days.length === 1) return;
+    // var index = days.indexOf(currentDay);
+    // days.splice(index, 1);
+    // switchDay(index);
   }
 
   function renderDayButtons () {

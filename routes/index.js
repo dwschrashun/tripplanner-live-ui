@@ -5,6 +5,10 @@ var Hotel = models.Hotel;
 var Restaurant = models.Restaurant;
 var Activity = models.Activity;
 var Promise = require('bluebird');
+var bodyParser = require("body-parser");
+var days = require("./api/days");
+
+router.use(bodyParser.json());
 
 router.get('/', function(req, res) {
   Promise.all([
@@ -19,5 +23,7 @@ router.get('/', function(req, res) {
       });
     })
 })
+
+router.use("/api/days", days);
 
 module.exports = router;
