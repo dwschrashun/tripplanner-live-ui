@@ -11,9 +11,9 @@ router.get("/", function (req, res) {
 	Day.find({number: {$ne: null}}).exec().then(function (result) {
 		console.log("all days w nums: ", result);
 		res.json(result);
-	}).then(null, function (error) {		
-		next();
+	}).then(null, function (error) {	
 		res.send(error);
+		next();
 	});
 });
 
@@ -32,9 +32,10 @@ router.post("/", function (req, res) {
 router.get("/:id", function (req, res) {
 	console.log("hit router for id: ", req.params.id);
 	Day.find({number: req.params.id}).exec().then(function (result) {
-		console.log("id search result: ", result);
-		res.json(result);
+		console.log("id search result: ", result[0]);
+		res.json(result[0]);
 	}).then(null, function (error) {
+		console.error("search error: ", error);
 		res.send(error);
 	});
 });
@@ -47,14 +48,21 @@ router.post("/:id/", function (req, res) {
 });
 
 router.delete("/", function (req, res) {
-	//console.log(req.body);
+	console.log("request body: ", req.body);
 	Day.findOne({number: req.body.num}).exec().
 	then(function (searchResult) {
 		console.log("page to remove: ", searchResult);
 		searchResult.remove();}).
 	then(function (result) {
-		console.log("deleted: ", result);
-		res.json("success");}).
+		// console.log("deleted: ", result);
+		Day.find({number: {$gt: req.body.num}}).
+	then(function (searchResults) { 
+		console.log("days to move: ", searchResults);
+		searchResults.forEach(function (current){
+			current.number--;
+			current.save();
+		});
+		res.json(searchResults);});}).
 	then(null, function(err) {
 		console.error("deletion error: ", err);
 		next();
@@ -87,17 +95,23 @@ router.delete("/", function (req, res) {
 
 
 
-// router.post("/:id/hotel", function (request, response) {
-	
-// });
-
-// router.post("/:id/restaurants", function (request, response) {
-	
-// });
-
-// router.post("/:id/activities", function (request, response) {
-	
-// });
+router.post("/:id/:type", function (request, response) {
+    $.ajax({
+      method: 'post',
+      url: "/api/days/" + request.params.id + "/",
+      data: {num: numOfButtons},
+      success: function (newDay) {
+        console.log("new day: ", newDay);
+        currentDay = newDay;
+        renderDayButtons();
+        switchDay(numOfButtons);
+      },
+      error: function (errorObj) {
+          // some code to run if the request errors out
+          console.error("unable to add day: ", errorObj);
+      }
+   });
+});
 
 
 

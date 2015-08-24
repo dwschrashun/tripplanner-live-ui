@@ -52,12 +52,12 @@ var daysModule = (function(){
 
   function getDay (index, cb) {
     var theUrl = "/api/days/" + index;
-    console.log(index);
+    console.log("index in getDay: ", index);
     $.ajax({
       method: 'get',
       url: theUrl,
       success: function (switchedDay) {
-          console.log("active day: ", switchedDay);
+          console.log("active day: ", switchedDay.number);
           currentDay = switchedDay;
           cb();
       },
@@ -70,36 +70,50 @@ var daysModule = (function(){
   }
 
   function removeCurrentDay () {
-    console.log("daynumtodelete: ",currentDay[0].number);
-    var numToDelete = currentDay[0].number;
+    console.log("daynumtodelete: ",currentDay.number);
+    var numToDelete = currentDay.number;
     var nextNumber = numToDelete - 1;
     console.log("new active : ", currentDay.number);
     $.ajax({
       method: 'delete',
       url: '/api/days',
-      data: {num: currentDay[0].number},
+      data: {num: currentDay.number},
       success: function (responseData) {
           console.log("day deleted: ", responseData);
           if (nextNumber > 0) {
-            switchDay(nextNumber);
+            //console.log("num to delete: ", numToDelete);
+            switchDay(numToDelete);
           }
           else {
             //add new day 1
-          }
+          }  
+
+          // $.ajax({
+          //   method: 'get',
+          //   url: "/api/days",
+          //   success: function (result) {
+          //     //console.log("all days w nums: ", result);
+          //     // result.forEach(function(day, i){
+          //     //   console.log("day num before: ", day.number);
+          //     //   if (day.number > numToDelete) {
+          //     //     console.log("here: ", numToDelete);
+          //     //     day.number--;
+          //     //   }
+          //     //   console.log("day num after: ", day.number);
+          //     // });
+
+          //   },
+          //   error: function (errorObj) {
+          //       // some code to run if the request errors out
+          //       console.error("unable to render buttons: ", errorObj);
+          //   }
+          // });
       },
       error: function (errorObj) {
           // some code to run if the request errors out
           console.error("unable to delete day: ", errorObj);
       }
    });
-
-    // $.delete('/api/days', function (data) {console.log('deleted day: ', data)})
-    // .fail( function (err) {console.error('err', err)} );
-
-    // if (days.length === 1) return;
-    // var index = days.indexOf(currentDay);
-    // days.splice(index, 1);
-    // switchDay(index);
   }
 
   function renderDayButtons () {
@@ -113,7 +127,7 @@ var daysModule = (function(){
         //console.log("all days w nums: ", result);
         result.forEach(function(day, i){
           //console.log("day, i: ", day, i);
-          $daySelect.append(daySelectHTML(day, i, day === currentDay));
+          $daySelect.append(daySelectHTML(day, i, day.number === currentDay.number));
         });
       },
       error: function (errorObj) {
@@ -125,12 +139,14 @@ var daysModule = (function(){
   }
 
   function daySelectHTML (day, i, isCurrentDay) {
+    console.log(day.number, currentDay.number, isCurrentDay);
     return '<button class="btn btn-circle day-btn' + (isCurrentDay ? ' current-day' : '') + '">' + (i + 1) + '</button>';
   }
 
   exports.addAttraction = function(attraction) {
-    if (currentDay[attraction.type].indexOf(attraction) !== -1) return;
-    currentDay[attraction.type].push(attraction);
+    // if (currentDay[attraction.type].indexOf(attraction) !== -1) return;
+    // currentDay[attraction.type].push(attraction);
+
     renderDay(currentDay);
   };
 
@@ -145,16 +161,16 @@ var daysModule = (function(){
     mapModule.eraseMarkers();
     day = day || currentDay;
     console.log("the day: ", day);
-    Object.keys(day[0]).forEach(function(type){
+    Object.keys(day).forEach(function(type){
       var $list = $('#itinerary ul[data-type="' + type + '"]');
       $list.empty();
       if (type === "hotel" || type === "restaurants" || type === "activities") {
-        var daytype = day[0][type]
+        var daytype = day[type]
         //console.log("type: ", type);
         //console.log("daytype: ", daytype);
         if (daytype.length > 0) {
-          $list.append(itineraryHTML(day[0][type]));
-          mapModule.drawAttraction(day[0][type]);
+          $list.append(itineraryHTML(day[type]));
+          mapModule.drawAttraction(day[type]);
         }
       } 
     });
