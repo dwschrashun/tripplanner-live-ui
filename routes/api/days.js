@@ -7,8 +7,14 @@ var Activity = models.Activity;
 var Day = models.Day;
 var Promise = require('bluebird');
 
-router.get("/", function (request, response) {
-
+router.get("/", function (req, res) {
+	Day.find({number: {$ne: null}}).exec().then(function (result) {
+		console.log("all days w nums: ", result);
+		res.json(result);
+	}).then(null, function (error) {		
+		next();
+		res.send(error);
+	});
 });
 
 router.post("/", function (req, res) {
@@ -40,12 +46,19 @@ router.post("/:id/", function (req, res) {
 	});
 });
 
-router.delete("/:id", function (request, response) {
-	console.log(request.body);
-	// request.body.Day.remove();
-	// Day.find({_id: request.params.id}).exec().then(function (result) {
-	// 	result.remove();
-	// });
+router.delete("/", function (req, res) {
+	//console.log(req.body);
+	Day.findOne({number: req.body.num}).exec().
+	then(function (searchResult) {
+		console.log("page to remove: ", searchResult);
+		searchResult.remove();}).
+	then(function (result) {
+		console.log("deleted: ", result);
+		res.json("success");}).
+	then(null, function(err) {
+		console.error("deletion error: ", err);
+		next();
+	});
 });
 
 // router.get("/:id/hotel", function (request, response) {

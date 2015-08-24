@@ -41,7 +41,7 @@ var daysModule = (function(){
     var $title = $('#day-title');
     // if (index >= days.length) index = days.length - 1;
     $title.children('span').remove();
-    $title.prepend('<span>Day ' + (index + 1) + '</span>');
+    $title.prepend('<span>Day ' + (index) + '</span>');
     //make asynch
     getDay(index, function () {
       console.log("current day is: ", currentDay);
@@ -70,12 +70,22 @@ var daysModule = (function(){
   }
 
   function removeCurrentDay () {
+    console.log("daynumtodelete: ",currentDay[0].number);
+    var numToDelete = currentDay[0].number;
+    var nextNumber = numToDelete - 1;
+    console.log("new active : ", currentDay.number);
     $.ajax({
       method: 'delete',
       url: '/api/days',
+      data: {num: currentDay[0].number},
       success: function (responseData) {
           console.log("day deleted: ", responseData);
-          switchDay(index);
+          if (nextNumber > 0) {
+            switchDay(nextNumber);
+          }
+          else {
+            //add new day 1
+          }
       },
       error: function (errorObj) {
           // some code to run if the request errors out
@@ -100,7 +110,9 @@ var daysModule = (function(){
       method: 'get',
       url: "/api/days",
       success: function (result) {
-        days.forEach(function(day, i){
+        //console.log("all days w nums: ", result);
+        result.forEach(function(day, i){
+          //console.log("day, i: ", day, i);
           $daySelect.append(daySelectHTML(day, i, day === currentDay));
         });
       },
@@ -109,8 +121,6 @@ var daysModule = (function(){
           console.error("unable to render buttons: ", errorObj);
       }
    });
-
-
     $daySelect.append('<button class="btn btn-circle day-btn new-day-btn">+</button>');
   }
 
@@ -140,8 +150,8 @@ var daysModule = (function(){
       $list.empty();
       if (type === "hotel" || type === "restaurants" || type === "activities") {
         var daytype = day[0][type]
-        console.log("type: ", type);
-        console.log("daytype: ", daytype);
+        //console.log("type: ", type);
+        //console.log("daytype: ", daytype);
         if (daytype.length > 0) {
           $list.append(itineraryHTML(day[0][type]));
           mapModule.drawAttraction(day[0][type]);

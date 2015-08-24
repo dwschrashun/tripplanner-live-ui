@@ -40,7 +40,7 @@ router.get('/', function(req, res) {
     console.error("this is error: ", error);
     next();
   });
-})
+});
 
 router.use("/api/days", days);
 
