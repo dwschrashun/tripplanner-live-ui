@@ -9,7 +9,7 @@ var daysModule = (function(){
         restaurants: [],
         activities:  []
       }],
-      currentDay = days[0];
+      currentDay;
 
   function addDay () {
     // days.push({
@@ -17,30 +17,49 @@ var daysModule = (function(){
     //   restaurants: [],
     //   activities: []
     // });
-    
-    renderDayButtons();
-    switchDay(currentDay.number + 1);
+    var numOfButtons = $(".day-buttons").children().length;
+    console.log("numOfButtons: ", numOfButtons);
+    $.ajax({
+      method: 'post',
+      url: "/api/days/",
+      data: {num: numOfButtons},
+      success: function (newDay) {
+        console.log("new day: ", newDay);
+        currentDay = newDay;
+        renderDayButtons();
+        switchDay(numOfButtons);
+      },
+      error: function (errorObj) {
+          // some code to run if the request errors out
+          console.error("unable to add day: ", errorObj);
+      }
+   });
   }
 
   function switchDay (index) {
+    console.log("index is: ", index);
     var $title = $('#day-title');
-    if (index >= days.length) index = days.length - 1;
+    // if (index >= days.length) index = days.length - 1;
     $title.children('span').remove();
     $title.prepend('<span>Day ' + (index + 1) + '</span>');
-    currentDay = getDay(index);
-    console.log("current day is: ", currentDay);
-    renderDay(currentDay);
-    renderDayButtons();
+    //make asynch
+    getDay(index, function () {
+      console.log("current day is: ", currentDay);
+      renderDay(currentDay);
+      renderDayButtons();
+    });
   }
 
-  function getDay (index) {
+  function getDay (index, cb) {
     var theUrl = "/api/days/" + index;
+    console.log(index);
     $.ajax({
       method: 'get',
       url: theUrl,
-      success: function (responseData) {
-          console.log("active day: ", responseData);
-          return responseData;
+      success: function (switchedDay) {
+          console.log("active day: ", switchedDay);
+          currentDay = switchedDay;
+          cb();
       },
       error: function (errorObj) {
           // some code to run if the request errors out
@@ -74,12 +93,24 @@ var daysModule = (function(){
   }
 
   function renderDayButtons () {
-    console.log("rendering day buttons");
+    //console.log("rendering day buttons");
     var $daySelect = $('#day-select');
     $daySelect.empty();
-    days.forEach(function(day, i){
-      $daySelect.append(daySelectHTML(day, i, day === currentDay));
-    });
+    $.ajax({
+      method: 'get',
+      url: "/api/days",
+      success: function (result) {
+        days.forEach(function(day, i){
+          $daySelect.append(daySelectHTML(day, i, day === currentDay));
+        });
+      },
+      error: function (errorObj) {
+          // some code to run if the request errors out
+          console.error("unable to render buttons: ", errorObj);
+      }
+   });
+
+
     $daySelect.append('<button class="btn btn-circle day-btn new-day-btn">+</button>');
   }
 
@@ -104,13 +135,18 @@ var daysModule = (function(){
     mapModule.eraseMarkers();
     day = day || currentDay;
     console.log("the day: ", day);
-    Object.keys(day).forEach(function(type){
+    Object.keys(day[0]).forEach(function(type){
       var $list = $('#itinerary ul[data-type="' + type + '"]');
       $list.empty();
-      day[type].forEach(function(attraction){
-        $list.append(itineraryHTML(attraction));
-        mapModule.drawAttraction(attraction);
-      });
+      if (type === "hotel" || type === "restaurants" || type === "activities") {
+        var daytype = day[0][type]
+        console.log("type: ", type);
+        console.log("daytype: ", daytype);
+        if (daytype.length > 0) {
+          $list.append(itineraryHTML(day[0][type]));
+          mapModule.drawAttraction(day[0][type]);
+        }
+      } 
     });
   }
 

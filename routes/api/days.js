@@ -8,26 +8,12 @@ var Day = models.Day;
 var Promise = require('bluebird');
 
 router.get("/", function (request, response) {
-	console.log("hit router");
-	Day.find().exec().then(function (result) {
-		if (result.length < 1) {
-			console.log("day result: ", result);
-			return Day.create({number: 1});
-		}
-		else {
-			return response.json(result[0]);
-		}
-	}).then(function (newDay) {
-		console.log("returning new day");
-		return response.json(newDay);
-	}).then(null, function (error) {
-		console.error("this is error: ", error);
-		next();
-	});
+
 });
 
 router.post("/", function (req, res) {
-	Day.create(req.body).then(function(result) {
+	console.log("hit post: ", req.body.num);
+	Day.create({number: req.body.num}).then(function (result){
 		console.log("added: ", result);
 		res.status(201);
 		res.json(result);
@@ -38,7 +24,9 @@ router.post("/", function (req, res) {
 });
 
 router.get("/:id", function (req, res) {
+	console.log("hit router for id: ", req.params.id);
 	Day.find({number: req.params.id}).exec().then(function (result) {
+		console.log("id search result: ", result);
 		res.json(result);
 	}).then(null, function (error) {
 		res.send(error);
