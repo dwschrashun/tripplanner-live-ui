@@ -9,7 +9,7 @@ var Promise = require('bluebird');
 
 router.get("/", function (req, res) {
 	Day.find({number: {$ne: null}}).exec().then(function (result) {
-		console.log("all days w nums: ", result);
+		//console.log("all days w nums: ", result);
 		res.json(result);
 	}).then(null, function (error) {	
 		res.send(error);
@@ -17,6 +17,7 @@ router.get("/", function (req, res) {
 	});
 });
 
+//new day
 router.post("/", function (req, res) {
 	console.log("hit post: ", req.body.num);
 	Day.create({number: req.body.num}).then(function (result){
@@ -29,24 +30,23 @@ router.post("/", function (req, res) {
 	});
 });
 
+
+//get day
 router.get("/:id", function (req, res) {
 	console.log("hit router for id: ", req.params.id);
-	Day.find({number: req.params.id}).exec().then(function (result) {
-		console.log("id search result: ", result[0]);
-		res.json(result[0]);
+	Day.findOne({number: req.params.id}).populate("hotel restaurants activities").exec().then(function (result) {
+		console.log("day itinerary: ", result);
+		return res.json(result);
+	// }).then (fu)
+	// 	console.log("id search result: ", result[0]);
+	// 	res.json(result[0]);
 	}).then(null, function (error) {
 		console.error("search error: ", error);
 		res.send(error);
 	});
 });
 
-router.post("/:id/", function (req, res) {
-	Day.create(req.body).then(function(result) {
-		res.status(201);
-		res.json(result);
-	});
-});
-
+//delete day
 router.delete("/", function (req, res) {
 	console.log("request body: ", req.body);
 	Day.findOne({number: req.body.num}).exec().
@@ -68,6 +68,96 @@ router.delete("/", function (req, res) {
 		next();
 	});
 });
+
+
+//new attraction
+router.post("/:day/:type", function (req, res, next) {
+	var attractionType = req.params.type;
+	var attraction = req.body;
+	//console.log("attraction: ", attraction);
+	var day = req.params.day;
+	//console.log("posting attractions");
+	Day.findOne({number: day}).
+		then(function(dayResult) {
+		if (attractionType === "hotels") {
+			dayResult.hotel = attraction;
+			dayResult.save().
+			then(function(saveResult) {
+				return res.json(saveResult);
+			}).
+			then(null, function (error) {
+				console.error("new attraction error: ", error);
+				next();
+			});
+		} else if (attractionType === "restaurants") {
+			dayResult.restaurants.push(attraction);
+			dayResult.save().
+			// then(function(day) {
+			// 	console.log("type: ", attractionType);
+			// 	return Day.findOne({number: day.number}).populate("restaurants").exec();
+			// }).
+			then(function(saveResult) {
+				return res.json(saveResult);
+			}).
+			then(null, function (error) {
+				console.error("new attraction error: ", error);
+				next();
+			});
+		} else if (attractionType === "activities") {
+			dayResult.activities.push(attraction);
+			dayResult.save().
+			// then(function(day) {
+			// 	console.log("type: ", attractionType);
+			// 	return Day.findOne({number: day.number}).populate("activities").exec();
+			// }).
+			then(function(saveResult) {
+				return res.json(saveResult);
+			}).
+			then(null, function (error) {
+				console.error("new attraction error: ", error);
+				next();
+			});
+		}
+	});
+});
+
+//get attraction object / populate
+router.get("/attractions/hotels/:id", function (req, res) {
+	Hotel.findOne({_id: req.params.id}).
+		then(function(attractionResult) {
+			console.log("attraction found: ", attractionResult);
+			res.json(attractionResult);
+		}).
+		then(null, function (error) {
+			console.error("Error on attraction search: ", error);
+			next();
+		});
+});
+
+router.get("/attractions/restaurants/:id", function (req, res) {
+	Restaurant.findOne({_id: req.params.id}).
+		then(function(attractionResult) {
+			console.log("attraction found: ", attractionResult);
+			res.json(attractionResult);
+		}).
+		then(null, function (error) {
+			console.error("Error on attraction search: ", error);
+			next();
+		});
+});
+
+router.get("/attractions/activities/:id", function (req, res) {
+	Activity.findOne({_id: req.params.id}).
+		then(function(attractionResult) {
+			console.log("attraction found: ", attractionResult);
+			res.json(attractionResult);
+		}).
+		then(null, function (error) {
+			console.error("Error on attraction search: ", error);
+			next();
+		});
+});
+
 
 // router.get("/:id/hotel", function (request, response) {
 // 	Day.find({_id: request.params.day}).exec().then(function (result) {
@@ -94,24 +184,6 @@ router.delete("/", function (req, res) {
 // });
 
 
-
-router.post("/:id/:type", function (request, response) {
-    $.ajax({
-      method: 'post',
-      url: "/api/days/" + request.params.id + "/",
-      data: {num: numOfButtons},
-      success: function (newDay) {
-        console.log("new day: ", newDay);
-        currentDay = newDay;
-        renderDayButtons();
-        switchDay(numOfButtons);
-      },
-      error: function (errorObj) {
-          // some code to run if the request errors out
-          console.error("unable to add day: ", errorObj);
-      }
-   });
-});
 
 
 

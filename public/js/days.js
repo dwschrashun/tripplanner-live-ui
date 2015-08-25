@@ -51,11 +51,10 @@ var daysModule = (function(){
   }
 
   function getDay (index, cb) {
-    var theUrl = "/api/days/" + index;
-    console.log("index in getDay: ", index);
+    //console.log("index in getDay: ", index);
     $.ajax({
       method: 'get',
-      url: theUrl,
+      url: "/api/days/" + index,
       success: function (switchedDay) {
           console.log("active day: ", switchedDay.number);
           currentDay = switchedDay;
@@ -73,7 +72,7 @@ var daysModule = (function(){
     console.log("daynumtodelete: ",currentDay.number);
     var numToDelete = currentDay.number;
     var nextNumber = numToDelete - 1;
-    console.log("new active : ", currentDay.number);
+    //console.log("new active : ", currentDay.number);
     $.ajax({
       method: 'delete',
       url: '/api/days',
@@ -87,27 +86,6 @@ var daysModule = (function(){
           else {
             //add new day 1
           }  
-
-          // $.ajax({
-          //   method: 'get',
-          //   url: "/api/days",
-          //   success: function (result) {
-          //     //console.log("all days w nums: ", result);
-          //     // result.forEach(function(day, i){
-          //     //   console.log("day num before: ", day.number);
-          //     //   if (day.number > numToDelete) {
-          //     //     console.log("here: ", numToDelete);
-          //     //     day.number--;
-          //     //   }
-          //     //   console.log("day num after: ", day.number);
-          //     // });
-
-          //   },
-          //   error: function (errorObj) {
-          //       // some code to run if the request errors out
-          //       console.error("unable to render buttons: ", errorObj);
-          //   }
-          // });
       },
       error: function (errorObj) {
           // some code to run if the request errors out
@@ -139,15 +117,52 @@ var daysModule = (function(){
   }
 
   function daySelectHTML (day, i, isCurrentDay) {
-    console.log(day.number, currentDay.number, isCurrentDay);
+    //console.log(day.number, currentDay.number, isCurrentDay);
     return '<button class="btn btn-circle day-btn' + (isCurrentDay ? ' current-day' : '') + '">' + (i + 1) + '</button>';
   }
 
-  exports.addAttraction = function(attraction) {
+  exports.addAttraction = function(id, type) {
     // if (currentDay[attraction.type].indexOf(attraction) !== -1) return;
     // currentDay[attraction.type].push(attraction);
-
-    renderDay(currentDay);
+    var day = currentDay.number;
+    //console.log("type, daynum: ", type, day);
+    $.ajax({
+      method: 'get',
+      url: "/api/days/attractions/" + type + "/" + id,
+      success: function (attraction) {
+        //console.log("TYPE: ", type);
+        //console.log("attraction: ", attraction);
+        $.ajax({
+          method: 'post',
+          url: "/api/days/" + day + "/" + type,
+          data: attraction,
+          success: function (postedDay) {
+            $.ajax({
+              method: 'get',
+              url: "/api/days/" + postedDay.number,
+              success: function (switchedDay) {
+                  console.log("active day: ", switchedDay.number);
+                  renderDay(switchedDay);
+              },
+              error: function (errorObj) {
+                  // some code to run if the request errors out
+                  console.error("unable to switch day: ", errorObj);
+              }
+            });
+            // console.log("attractions for posted day: ", postedDay);
+            // console.log("attractions for current day: ", currentDay);
+          },
+          error: function (errorObj) {
+              // some code to run if the request errors out
+              console.error("unable to add attraction: ", errorObj);
+          }
+        });
+      },
+      error: function (errorObj) {
+          // some code to run if the request errors out
+          console.error("unable to find attraction: ", errorObj);
+      }
+    });
   };
 
   exports.removeAttraction = function (attraction) {
@@ -160,24 +175,28 @@ var daysModule = (function(){
   function renderDay(day) {
     mapModule.eraseMarkers();
     day = day || currentDay;
-    console.log("the day: ", day);
+    console.log("rendering day: ", day);
     Object.keys(day).forEach(function(type){
       var $list = $('#itinerary ul[data-type="' + type + '"]');
       $list.empty();
       if (type === "hotel" || type === "restaurants" || type === "activities") {
-        var daytype = day[type]
-        //console.log("type: ", type);
-        //console.log("daytype: ", daytype);
-        if (daytype.length > 0) {
-          $list.append(itineraryHTML(day[type]));
-          mapModule.drawAttraction(day[type]);
-        }
+        var daytype = day[type];
+        daytype.forEach(function(attraction) {
+          console.log("type: ", type);
+          // console.log("day: ", day);
+          console.log("list of attractions for type for this day: ", daytype);
+          console.log("attraction name: ", attraction.name);
+          //if (attraction.length > 0) {
+            $list.append(itineraryHTML(attraction, type));
+            mapModule.drawAttraction(attraction);
+          //}
+        });
       } 
     });
   }
 
-  function itineraryHTML (attraction) {
-    return '<div class="itinerary-item><span class="title>' + attraction.name + '</span><button data-id="' + attraction._id + '" data-type="' + attraction.type + '" class="btn btn-xs btn-danger remove btn-circle">x</button></div>';
+  function itineraryHTML (attraction, type) {
+    return '<div class="itinerary-item><span class="title>' + attraction.name + '</span><button data-id="' + attraction._id + '" data-type="' + type + '" class="btn btn-xs btn-danger remove btn-circle">x</button></div>';
   }
 
   $(document).ready(function(){
